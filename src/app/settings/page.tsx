@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
@@ -12,6 +13,7 @@ interface SettingsData {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [anthropicKey, setAnthropicKey] = useState("");
   const [githubToken, setGithubToken] = useState("");
@@ -79,7 +81,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-bold text-zinc-100">Settings</h1>
             <button
-              onClick={() => { window.location.href = `${BASE}/`; }}
+              onClick={() => router.push("/")}
               className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
             >
               Back
