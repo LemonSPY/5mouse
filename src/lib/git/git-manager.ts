@@ -35,7 +35,7 @@ export class GitManager {
   async createAndPush(
     dir: string,
     repoName: string,
-    isPrivate = true
+    isPrivate = false
   ): Promise<string> {
     if (!this.octokit) {
       throw new Error("GITHUB_TOKEN not configured — cannot push to GitHub");

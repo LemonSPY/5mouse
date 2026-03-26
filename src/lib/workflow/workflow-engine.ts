@@ -274,7 +274,7 @@ export async function pushToGitHub(projectId: string): Promise<string> {
   const url = await git.createAndPush(
     getProjectDir(projectId),
     project.name,
-    true
+    false
   );
 
   await prisma.project.update({
