@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { Project } from "@/types";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -102,7 +101,7 @@ export function ProjectList({ projects, selectedId, onSelect, onNew, onImport }:
 
       {/* Settings */}
       <div className="p-3 border-t border-zinc-800">
-        <Link
+        <a
           href={`${BASE}/settings`}
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors"
         >
@@ -111,7 +110,7 @@ export function ProjectList({ projects, selectedId, onSelect, onNew, onImport }:
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           Settings &amp; API Keys
-        </Link>
+        </a>
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useState, useEffect } from "react";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -26,7 +25,30 @@ export default function LoginPage() {
 
   const handleSignIn = async (provider: string) => {
     setLoading(provider);
-    await signIn(provider, { callbackUrl: `${BASE}/` });
+    try {
+      // Custom signIn: next-auth/react's signIn() doesn't include proxy prefix
+      const csrfRes = await fetch(`${BASE}/api/auth/csrf`);
+      const { csrfToken } = await csrfRes.json();
+
+      const res = await fetch(`${BASE}/api/auth/signin/${provider}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-Auth-Return-Redirect": "1",
+        },
+        body: new URLSearchParams({
+          csrfToken,
+          callbackUrl: `${BASE}/`,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setLoading(null);
+    }
   };
 
   const fetchVersions = async () => {
