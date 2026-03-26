@@ -12,7 +12,7 @@ function isPublic(pathname: string): boolean {
   return publicPaths.some((p) => pathname.startsWith(p));
 }
 
-export default function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublic(pathname)) {
