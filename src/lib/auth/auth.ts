@@ -4,8 +4,11 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db/client";
 
+const basePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/api/auth`;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  basePath,
   trustHost: true,
   providers: [
     GitHub({
