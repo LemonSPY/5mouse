@@ -1,6 +1,9 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_BASE_PATH: /5mouse
     ports:
       - "4000:4000"
     environment:
@@ -17,6 +20,7 @@ services:
       - AUTH_GOOGLE_SECRET=${AUTH_GOOGLE_SECRET}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-$AUTH_SECRET}
+      - NEXT_PUBLIC_BASE_PATH=/5mouse
       - DATA_DIR=/data
     volumes:
       - project-data:/data

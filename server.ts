@@ -28,11 +28,9 @@ app.prepare().then(() => {
     handle(req, res);
   });
 
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-
   const io = new SocketIOServer(server, {
     cors: { origin: "*", methods: ["GET", "POST"] },
-    path: `${basePath}/ws`,
+    path: "/ws",
   });
 
   // Forward agent events to Socket.IO rooms

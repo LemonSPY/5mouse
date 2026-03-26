@@ -4,6 +4,9 @@ FROM node:20-alpine AS base
 FROM base AS builder
 WORKDIR /app
 
+ARG NEXT_PUBLIC_BASE_PATH=/5mouse
+ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -20,6 +23,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=4000
+ARG NEXT_PUBLIC_BASE_PATH=/5mouse
+ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 
 # Install git (needed for simple-git operations)
 RUN apk add --no-cache git

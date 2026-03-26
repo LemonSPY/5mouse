@@ -81,7 +81,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-bold text-zinc-100">Settings</h1>
             <button
-              onClick={() => router.push("/")}
+              onClick={() => router.push(`${BASE}/`)}
               className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
             >
               Back

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const publicPaths = [
   "/login",
   "/api/auth",
@@ -27,8 +29,8 @@ export default function middleware(request: NextRequest) {
 
   if (!token) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    loginUrl.pathname = `${BASE}/login`;
+    loginUrl.searchParams.set("callbackUrl", `${BASE}${pathname}`);
     return NextResponse.redirect(loginUrl);
   }
 
