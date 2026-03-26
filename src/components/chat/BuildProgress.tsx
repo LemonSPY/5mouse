@@ -7,7 +7,7 @@ interface BuildProgressProps {
 }
 
 export function BuildProgress({ status, streamContent, onCancel }: BuildProgressProps) {
-  const isActive = ["PLANNING", "BUILDING", "MODIFYING", "ANALYZING"].includes(status);
+  const isActive = ["PLANNING", "BUILDING", "MODIFYING"].includes(status);
 
   if (!isActive && !streamContent) return null;
 
@@ -15,7 +15,6 @@ export function BuildProgress({ status, streamContent, onCancel }: BuildProgress
     PLANNING: "Generating plan...",
     BUILDING: "Building project...",
     MODIFYING: "Applying changes...",
-    ANALYZING: "Analyzing codebase...",
   };
 
   return (

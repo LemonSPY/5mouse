@@ -71,25 +71,4 @@ export class GitManager {
     const git = simpleGit(dir);
     return git.branchLocal();
   }
-
-  /** Clone a GitHub repo into the target directory. */
-  async clone(repoUrl: string, targetDir: string, branch?: string): Promise<void> {
-    // Inject GITHUB_TOKEN for private repo auth if available
-    let authUrl = repoUrl;
-    const ghToken = process.env.GITHUB_TOKEN;
-    if (ghToken && repoUrl.startsWith("https://github.com/")) {
-      authUrl = repoUrl.replace(
-        "https://github.com/",
-        `https://${ghToken}@github.com/`
-      );
-    }
-
-    const args = ["--single-branch"];
-    if (branch) {
-      args.push("--branch", branch);
-    }
-
-    const git = simpleGit();
-    await git.clone(authUrl, targetDir, args);
-  }
 }

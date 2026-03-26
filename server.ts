@@ -5,7 +5,6 @@ import {
   runPlanning,
   runBuild,
   runModify,
-  runAnalysis,
   cancelJob,
 } from "./src/lib/workflow/workflow-engine";
 import { prisma } from "./src/lib/db/client";
@@ -78,15 +77,6 @@ app.prepare().then(() => {
               messages: mappedMessages,
               status: project?.status,
             });
-
-            // Auto-trigger analysis for imported projects that are still IDLE
-            if (project?.status === "IDLE" && project.sourceRepoUrl) {
-              runAnalysis(
-                projectId,
-                (evt) => send({ type: "stream", event: evt }),
-                (status) => send({ type: "status", status })
-              );
-            }
             break;
           }
 
@@ -98,14 +88,7 @@ app.prepare().then(() => {
               break;
             }
 
-            if (project.status === "IDLE" && project.sourceRepoUrl) {
-              // Imported project — run analysis instead of planning
-              runAnalysis(
-                projectId,
-                (evt) => send({ type: "stream", event: evt }),
-                (status) => send({ type: "status", status })
-              );
-            } else if (project.status === "IDLE") {
+            if (project.status === "IDLE") {
               runPlanning(
                 projectId,
                 (evt) => send({ type: "stream", event: evt }),
