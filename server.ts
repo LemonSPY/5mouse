@@ -26,10 +26,8 @@ function normalizeStatus(status: string): string {
 
 app.prepare().then(() => {
   const server = createServer((req, res) => {
-    // Strip basePath prefix so Next.js handles routing correctly
-    if (basePath && req.url?.startsWith(basePath)) {
-      req.url = req.url.slice(basePath.length) || "/";
-    }
+    // Next.js basePath config handles prefix stripping internally.
+    // Do NOT strip here — that would cause double-stripping.
     handle(req, res);
   });
 
