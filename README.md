@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 5mouse 🐭
 
-## Getting Started
+AI-powered software builder. Describe an idea, get a plan, approve it, and watch it get built — all from a chat interface.
 
-First, run the development server:
+## How It Works
+
+1. **Describe** — Type your software idea in the chat
+2. **Plan** — Claude generates a detailed implementation plan
+3. **Approve** — Review the plan, approve or request changes
+4. **Build** — Claude builds the entire project autonomously
+5. **Iterate** — Request modifications through chat
+6. **Ship** — Push to GitHub with one click
+
+## Prerequisites
+
+- **Node.js 20+**
+- **Claude Code CLI** installed and authenticated (`npm install -g @anthropic-ai/claude-code`)
+- **Git** installed
+- **Anthropic API key** (set `ANTHROPIC_API_KEY`)
+- **GitHub token** (optional, for pushing repos — set `GITHUB_TOKEN`)
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Install dependencies
+npm install
+
+# 2. Set up environment
+cp .env.example .env
+# Edit .env with your ANTHROPIC_API_KEY
+
+# 3. Install tsx for running the custom server
+npm install -D tsx
+
+# 4. Start development server
+npx tsx server.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Docker
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Build and run
+docker compose up --build
 
-## Learn More
+# Or with env vars inline
+ANTHROPIC_API_KEY=sk-ant-... docker compose up --build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+5mouse/
+├── server.ts                          # Custom server with Socket.IO
+├── src/
+│   ├── app/                           # Next.js pages + API routes
+│   ├── lib/                           # Core logic
+│   │   ├── claude-orchestrator.ts     # Claude CLI subprocess wrapper
+│   │   ├── prompt-templates.ts        # Plan/Build/Modify prompts
+│   │   ├── state-machine.ts           # Project workflow states
+│   │   ├── project-manager.ts         # SQLite DB + CRUD
+│   │   ├── git-manager.ts            # Git + GitHub operations
+│   │   └── workflow-engine.ts         # Ties everything together
+│   ├── hooks/useSocket.ts            # Client-side Socket.IO hook
+│   ├── components/                    # React UI components
+│   └── types/index.ts                # Shared TypeScript types
+├── Dockerfile
+├── docker-compose.yml
+└── .env.example
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Environment Variables
 
-## Deploy on Vercel
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude CLI |
+| `GITHUB_TOKEN` | No | GitHub PAT for creating/pushing repos |
+| `DATA_DIR` | No | Data directory path (default: `./data`) |
+| `PORT` | No | Server port (default: `3000`) |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
