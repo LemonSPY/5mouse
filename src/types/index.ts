@@ -42,6 +42,7 @@ export interface ProjectView {
   status: string;
   idea: string;
   plan: unknown;
+  sourceRepoUrl: string | null;
   gitRepoUrl: string | null;
   gitBranch: string | null;
   createdAt: string;
@@ -75,6 +76,7 @@ export interface WsServerEvent {
   status?: string;
   messages?: ChatMessage[];
   event?: AgentEventView;
+  sourceRepoUrl?: string;
 }
 
 // ── API Request/Response Types ──

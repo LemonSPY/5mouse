@@ -114,18 +114,19 @@ enum TeamRole {
 // ── Projects ─────────────────────────────────────────────────────
 
 model Project {
-  id          String        @id @default(cuid())
-  name        String
-  status      ProjectStatus @default(IDLE)
-  idea        String        @db.Text
-  plan        Json?
-  teamId      String?
-  templateId  String?
-  gitRepoUrl  String?
-  gitBranch   String?       @default("main")
-  createdById String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  name          String
+  status        ProjectStatus @default(IDLE)
+  idea          String        @db.Text
+  plan          Json?
+  teamId        String?
+  templateId    String?
+  sourceRepoUrl String?
+  gitRepoUrl    String?
+  gitBranch     String?       @default("main")
+  createdById   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   createdBy  User            @relation("CreatedBy", fields: [createdById], references: [id])
   team       Team?           @relation(fields: [teamId], references: [id])
@@ -147,6 +148,7 @@ enum ProjectStatus {
   PLANNING
   PLAN_REVIEW
   BUILDING
+  ANALYZING
   REVIEW
   MODIFYING
   DEBUGGING
@@ -202,6 +204,7 @@ enum AgentType {
   DEBUGGER
   REVIEWER
   DEVOPS
+  ANALYZER
 }
 
 enum AgentStatus {

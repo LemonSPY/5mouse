@@ -69,11 +69,30 @@ export default function Home() {
     sendMessage("Let's start over with a different approach.");
   };
 
-  const isActive = ["PLANNING", "BUILDING", "MODIFYING"].includes(status);
+  const handleImportProject = async () => {
+    const repoUrl = prompt("Enter GitHub repo URL (e.g. https://github.com/owner/repo):");
+    if (!repoUrl) return;
+
+    const res = await fetch("/api/projects/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repoUrl }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      setProjects((prev) => [data.data, ...prev]);
+      setSelectedId(data.data.id);
+    } else {
+      alert(data.error || "Import failed");
+    }
+  };
+
+  const isActive = ["PLANNING", "BUILDING", "MODIFYING", "ANALYZING"].includes(status);
 
   const getPlaceholder = () => {
     if (!selectedId) return "Create a new project to get started...";
     if (status === "IDLE") return "Describe your software idea...";
+    if (status === "ANALYZING") return "Analyzing the imported codebase...";
     if (status === "PLAN_REVIEW") return "Edit the plan, or approve to build...";
     if (status === "REVIEW" || status === "DONE") return "Request changes or new features...";
     if (isActive) return "Waiting for Claude...";
@@ -92,6 +111,7 @@ export default function Home() {
             setShowFiles(false);
           }}
           onNew={handleNewProject}
+          onImport={handleImportProject}
         />
       </div>
 

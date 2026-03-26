@@ -7,6 +7,7 @@ interface ProjectListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onImport: () => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -14,6 +15,7 @@ const statusColors: Record<string, string> = {
   PLANNING: "bg-yellow-500 animate-pulse",
   PLAN_REVIEW: "bg-yellow-400",
   BUILDING: "bg-blue-500 animate-pulse",
+  ANALYZING: "bg-cyan-500 animate-pulse",
   REVIEW: "bg-blue-400",
   MODIFYING: "bg-purple-500 animate-pulse",
   DEBUGGING: "bg-orange-500 animate-pulse",
@@ -26,6 +28,7 @@ const statusLabels: Record<string, string> = {
   PLANNING: "Planning...",
   PLAN_REVIEW: "Review Plan",
   BUILDING: "Building...",
+  ANALYZING: "Analyzing...",
   REVIEW: "Review",
   MODIFYING: "Modifying...",
   DEBUGGING: "Debugging...",
@@ -33,19 +36,28 @@ const statusLabels: Record<string, string> = {
   ERROR: "Error",
 };
 
-export function ProjectList({ projects, selectedId, onSelect, onNew }: ProjectListProps) {
+export function ProjectList({ projects, selectedId, onSelect, onNew, onImport }: ProjectListProps) {
   return (
     <div className="flex flex-col h-full bg-zinc-950 border-r border-zinc-800">
       {/* Header */}
       <div className="p-4 border-b border-zinc-800">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold text-zinc-100">5mouse</h1>
-          <button
-            onClick={onNew}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
-          >
-            + New
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onImport}
+              className="rounded-lg bg-zinc-800 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-700 transition-colors"
+              title="Import from GitHub"
+            >
+              Import
+            </button>
+            <button
+              onClick={onNew}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+            >
+              + New
+            </button>
+          </div>
         </div>
         <p className="text-[10px] text-zinc-500 mt-1">AI Software Builder</p>
       </div>
