@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { auth } from "@/lib/auth/auth";
+import { getSession } from "@/lib/auth/auth";
 import { GitManager } from "@/lib/git/git-manager";
 import type { ApiResponse } from "@/types";
 import path from "path";
@@ -11,8 +11,8 @@ const PROJECTS_DIR = path.join(DATA_DIR, "projects");
 const GITHUB_URL_PATTERN = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/;
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const session = await getSession();
+  if (!session) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized" } satisfies ApiResponse,
       { status: 401 }
@@ -53,9 +53,9 @@ export async function POST(req: NextRequest) {
       sourceRepoUrl: normalizedUrl,
       gitRepoUrl: normalizedUrl,
       gitBranch: branch || "main",
-      createdById: session.user.id,
+      createdById: session.userId,
       members: {
-        create: { userId: session.user.id, role: "OWNER" },
+        create: { userId: session.userId, role: "OWNER" },
       },
     },
   });

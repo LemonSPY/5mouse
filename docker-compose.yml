@@ -13,13 +13,7 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@5mouse-postgres:5432/platform?schema=public
       - REDIS_URL=redis://5mouse-redis:6379
       - AUTH_SECRET=${AUTH_SECRET}
-      - AUTH_TRUST_HOST=true
-      - AUTH_URL=https://needcitrus.com/5mouse
-      - AUTH_GITHUB_ID=${AUTH_GITHUB_ID}
-      - AUTH_GITHUB_SECRET=${AUTH_GITHUB_SECRET}
-      - AUTH_GOOGLE_ID=${AUTH_GOOGLE_ID}
-      - AUTH_GOOGLE_SECRET=${AUTH_GOOGLE_SECRET}
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - APP_PASSWORD=${APP_PASSWORD}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-${AUTH_SECRET}}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - NEXT_PUBLIC_BASE_PATH=/5mouse

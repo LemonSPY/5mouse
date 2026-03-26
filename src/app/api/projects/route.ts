@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { auth } from "@/lib/auth/auth";
+import { getSession } from "@/lib/auth/auth";
 import type { CreateProjectRequest, ApiResponse } from "@/types";
 import path from "path";
 import fs from "fs";
@@ -9,11 +9,11 @@ const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 const PROJECTS_DIR = path.join(DATA_DIR, "projects");
 
 export async function GET() {
-  const session = await auth();
+  const session = await getSession();
   const projects = await prisma.project.findMany({
     orderBy: { createdAt: "desc" },
-    ...(session?.user?.id
-      ? { where: { createdById: session.user.id } }
+    ...(session?.userId
+      ? { where: { createdById: session.userId } }
       : {}),
   });
 
@@ -21,8 +21,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const session = await getSession();
+  if (!session) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized" } satisfies ApiResponse,
       { status: 401 }
@@ -42,10 +42,10 @@ export async function POST(req: NextRequest) {
     data: {
       name: body.name?.trim() || `project-${Date.now().toString(36)}`,
       idea: body.idea.trim(),
-      createdById: session.user.id,
+      createdById: session.userId,
       templateId: body.templateId || undefined,
       members: {
-        create: { userId: session.user.id, role: "OWNER" },
+        create: { userId: session.userId, role: "OWNER" },
       },
     },
   });

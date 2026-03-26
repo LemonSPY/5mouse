@@ -1,12 +1,12 @@
-import { auth } from "@/lib/auth/auth";
+import { getSession } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/client";
 import type { ProjectRole } from "@/generated/prisma";
 
 /** Get the current authenticated user or null */
 export async function getCurrentUser() {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-  return prisma.user.findUnique({ where: { id: session.user.id } });
+  const session = await getSession();
+  if (!session) return null;
+  return prisma.user.findUnique({ where: { id: session.userId } });
 }
 
 /** Check if user has access to a project with the given minimum role */
@@ -31,9 +31,9 @@ export async function checkProjectAccess(
 
 /** Require authentication — throws if not authenticated */
 export async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const session = await getSession();
+  if (!session) {
     throw new Error("Unauthorized");
   }
-  return session.user;
+  return { id: session.userId };
 }

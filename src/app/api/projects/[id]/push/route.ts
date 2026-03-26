@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { auth } from "@/lib/auth/auth";
+import { getSession } from "@/lib/auth/auth";
 import { pushToGitHub } from "@/lib/workflow/workflow-engine";
 import type { ApiResponse } from "@/types";
 
@@ -8,7 +8,7 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
+  const session = await getSession();
   const { id } = await params;
   const project = await prisma.project.findUnique({ where: { id } });
   if (!project) {
@@ -19,7 +19,7 @@ export async function POST(
   }
 
   try {
-    const url = await pushToGitHub(id, session?.user?.id);
+    const url = await pushToGitHub(id, session?.userId);
     return NextResponse.json({ ok: true, data: { url } } satisfies ApiResponse);
   } catch (err) {
     return NextResponse.json(
