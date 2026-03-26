@@ -14,6 +14,7 @@ import type { AgentEvent } from "./src/lib/agents/types";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = parseInt(process.env.PORT || "4000", 10);
+const basePath = process.env.BASE_PATH || "";
 
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -25,12 +26,16 @@ function normalizeStatus(status: string): string {
 
 app.prepare().then(() => {
   const server = createServer((req, res) => {
+    // Strip basePath prefix so Next.js handles routing correctly
+    if (basePath && req.url?.startsWith(basePath)) {
+      req.url = req.url.slice(basePath.length) || "/";
+    }
     handle(req, res);
   });
 
   const io = new SocketIOServer(server, {
     cors: { origin: "*", methods: ["GET", "POST"] },
-    path: "/ws",
+    path: basePath ? `${basePath}/ws` : "/ws",
   });
 
   // Forward agent events to Socket.IO rooms

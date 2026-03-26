@@ -1,6 +1,6 @@
 FROM node:20-alpine AS base
 
-# ── Build stage ──
+# -- Build stage --
 FROM base AS builder
 WORKDIR /app
 
@@ -10,14 +10,11 @@ ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY prisma ./prisma
-COPY prisma.config.ts ./
-RUN npx prisma generate
-
 COPY . .
+RUN npx prisma generate
 RUN npm run build
 
-# ── Runtime stage ──
+# -- Runtime stage --
 FROM base AS runner
 WORKDIR /app
 
