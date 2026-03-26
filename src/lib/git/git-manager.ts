@@ -14,6 +14,27 @@ export class GitManager {
     }
   }
 
+  /** Clone a remote repo into the target directory. */
+  async clone(repoUrl: string, targetDir: string, branch?: string): Promise<SimpleGit> {
+    const cloneArgs = branch
+      ? ["--branch", branch, "--single-branch"]
+      : [];
+
+    // Inject token for private repo auth if available
+    let url = repoUrl;
+    const ghToken = process.env.GITHUB_TOKEN;
+    if (ghToken && url.startsWith("https://github.com/")) {
+      url = url.replace("https://github.com/", `https://${ghToken}@github.com/`);
+    }
+
+    const git = simpleGit();
+    await git.clone(url, targetDir, cloneArgs);
+    const clonedGit = simpleGit(targetDir);
+    await clonedGit.addConfig("user.email", "platform@automated.dev");
+    await clonedGit.addConfig("user.name", "AI Platform");
+    return clonedGit;
+  }
+
   /** Initialize a git repo in the given directory. */
   async init(dir: string): Promise<SimpleGit> {
     const git = simpleGit(dir);

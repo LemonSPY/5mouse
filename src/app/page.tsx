@@ -10,6 +10,8 @@ import { FileExplorer } from "@/components/chat/FileExplorer";
 import { useSocket } from "@/hooks/useSocket";
 import type { Project } from "@/types";
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export default function Home() {
   }, [messages, streamContent]);
 
   const fetchProjects = async () => {
-    const res = await fetch("/api/projects");
+    const res = await fetch(`${BASE}/api/projects`);
     const data = await res.json();
     if (data.ok) setProjects(data.data);
   };
@@ -44,7 +46,7 @@ export default function Home() {
     const idea = prompt("Describe your software idea:");
     if (!idea) return;
 
-    const res = await fetch("/api/projects", {
+    const res = await fetch(`${BASE}/api/projects`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idea }),
@@ -54,6 +56,24 @@ export default function Home() {
       setProjects((prev) => [data.data, ...prev]);
       setSelectedId(data.data.id);
       setTimeout(() => sendMessage(idea), 500);
+    }
+  };
+
+  const handleImportProject = async () => {
+    const repoUrl = prompt("GitHub repository URL (e.g. https://github.com/owner/repo):");
+    if (!repoUrl) return;
+
+    const res = await fetch(`${BASE}/api/projects/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repoUrl }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      setProjects((prev) => [data.data, ...prev]);
+      setSelectedId(data.data.id);
+    } else {
+      alert(data.error || "Import failed");
     }
   };
 
@@ -69,7 +89,7 @@ export default function Home() {
     sendMessage("Let's start over with a different approach.");
   };
 
-  const isActive = ["PLANNING", "BUILDING", "MODIFYING"].includes(status);
+  const isActive = ["PLANNING", "BUILDING", "MODIFYING", "ANALYZING"].includes(status);
 
   const getPlaceholder = () => {
     if (!selectedId) return "Create a new project to get started...";
@@ -92,6 +112,7 @@ export default function Home() {
             setShowFiles(false);
           }}
           onNew={handleNewProject}
+          onImport={handleImportProject}
         />
       </div>
 
@@ -127,7 +148,7 @@ export default function Home() {
                   <button
                     onClick={async () => {
                       const res = await fetch(
-                        `/api/projects/${selectedId}/push`,
+                        `${BASE}/api/projects/${selectedId}/push`,
                         { method: "POST" }
                       );
                       const data = await res.json();

@@ -15,13 +15,15 @@ export class AgentRunner extends EventEmitter {
   private projectId: string;
   private filesModified: string[] = [];
   private cancelled = false;
+  private envOverrides: Record<string, string>;
 
-  constructor(agentId: string, agentType: AgentType, projectId: string) {
+  constructor(agentId: string, agentType: AgentType, projectId: string, envOverrides?: Record<string, string>) {
     super();
     this.agentId = agentId;
     this.projectId = projectId;
     this.config = AGENT_CONFIGS[agentType];
     this.orchestrator = new ClaudeOrchestrator();
+    this.envOverrides = envOverrides || {};
   }
 
   /** Execute the agent with a specific prompt in a working directory */
@@ -62,6 +64,7 @@ export class AgentRunner extends EventEmitter {
         cwd,
         tools: this.config.tools,
         maxTurns: this.config.maxTurns,
+        envOverrides: this.envOverrides,
       });
 
       this.emitEvent("completed", `${this.config.name} agent completed`);

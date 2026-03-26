@@ -1,6 +1,7 @@
 import { AgentOrchestrator, messageBus } from "@/lib/agents";
 import { GitManager } from "@/lib/git/git-manager";
 import { prisma } from "@/lib/db/client";
+import { decrypt } from "@/lib/crypto";
 import { createSnapshot } from "@/lib/versioning/version-manager";
 import { transition } from "./state-machine";
 import type { AgentEvent, AgentTask } from "@/lib/agents/types";
@@ -14,6 +15,19 @@ type StatusCallback = (status: ProjectStatus) => void;
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 const PROJECTS_DIR = path.join(DATA_DIR, "projects");
 
+/** Look up the user's API keys and return env overrides for agent subprocesses. */
+async function getUserEnvOverrides(userId: string): Promise<Record<string, string>> {
+  const settings = await prisma.userSettings.findUnique({ where: { userId } });
+  const overrides: Record<string, string> = {};
+  if (settings?.anthropicApiKey) {
+    overrides.ANTHROPIC_API_KEY = decrypt(settings.anthropicApiKey);
+  }
+  if (settings?.githubToken) {
+    overrides.GITHUB_TOKEN = decrypt(settings.githubToken);
+  }
+  return overrides;
+}
+
 /** Active orchestrators keyed by project ID — used for cancellation. */
 const activeOrchestrators = new Map<string, AgentOrchestrator>();
 
@@ -25,12 +39,76 @@ export function getProjectDir(projectId: string): string {
 }
 
 /**
+ * Run the analysis phase: Analyzer agent examines an imported codebase.
+ */
+export async function runAnalysis(
+  projectId: string,
+  onEvent: EventCallback,
+  onStatus: StatusCallback,
+  userId?: string
+): Promise<void> {
+  const project = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
+
+  const newStatus = transition(project.status, "ANALYZING");
+  await prisma.project.update({ where: { id: projectId }, data: { status: newStatus } });
+  onStatus(newStatus);
+
+  const envOverrides = userId ? await getUserEnvOverrides(userId) : {};
+  const orchestrator = new AgentOrchestrator(projectId, envOverrides);
+  activeOrchestrators.set(projectId, orchestrator);
+
+  orchestrator.on("agent_event", (evt: AgentEvent) => {
+    onEvent(evt);
+    messageBus.publish(evt);
+  });
+
+  const cwd = getProjectDir(projectId);
+
+  const task: AgentTask = {
+    id: `analyze-${projectId}`,
+    title: "Analyze imported codebase",
+    description: `Analyze the existing codebase imported from ${project.sourceRepoUrl || "unknown source"}. Produce a comprehensive project profile.`,
+    priority: 10,
+  };
+
+  try {
+    const result = await orchestrator.spawnAgent(
+      "ANALYZER",
+      task,
+      cwd,
+      `This is an imported project from ${project.sourceRepoUrl}. Analyze the entire codebase and produce a comprehensive project profile covering tech stack, architecture, database schema, key components, API routes, dependencies, configuration, entry points, code quality, and areas of concern.`
+    );
+
+    // Save analysis as the project plan
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { plan: result.summary, status: "REVIEW" },
+    });
+
+    await prisma.message.create({
+      data: { projectId, role: "assistant", type: "plan", content: result.summary },
+    });
+
+    onStatus("REVIEW");
+  } catch (err) {
+    await prisma.project.update({ where: { id: projectId }, data: { status: "ERROR" } });
+    onStatus("ERROR");
+    await prisma.message.create({
+      data: { projectId, role: "system", type: "error", content: String(err) },
+    });
+  } finally {
+    activeOrchestrators.delete(projectId);
+  }
+}
+
+/**
  * Run the planning phase: Planner agent interviews user and creates a plan.
  */
 export async function runPlanning(
   projectId: string,
   onEvent: EventCallback,
-  onStatus: StatusCallback
+  onStatus: StatusCallback,
+  userId?: string
 ): Promise<void> {
   const project = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
 
@@ -38,7 +116,8 @@ export async function runPlanning(
   await prisma.project.update({ where: { id: projectId }, data: { status: newStatus } });
   onStatus(newStatus);
 
-  const orchestrator = new AgentOrchestrator(projectId);
+  const envOverrides = userId ? await getUserEnvOverrides(userId) : {};
+  const orchestrator = new AgentOrchestrator(projectId, envOverrides);
   activeOrchestrators.set(projectId, orchestrator);
 
   // Forward events
@@ -95,7 +174,8 @@ export async function runPlanning(
 export async function runBuild(
   projectId: string,
   onEvent: EventCallback,
-  onStatus: StatusCallback
+  onStatus: StatusCallback,
+  userId?: string
 ): Promise<void> {
   const project = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
   if (!project.plan) throw new Error("No plan found");
@@ -104,7 +184,8 @@ export async function runBuild(
   await prisma.project.update({ where: { id: projectId }, data: { status: newStatus } });
   onStatus(newStatus);
 
-  const orchestrator = new AgentOrchestrator(projectId);
+  const envOverrides = userId ? await getUserEnvOverrides(userId) : {};
+  const orchestrator = new AgentOrchestrator(projectId, envOverrides);
   activeOrchestrators.set(projectId, orchestrator);
 
   orchestrator.on("agent_event", (evt: AgentEvent) => {
@@ -181,7 +262,8 @@ export async function runModify(
   projectId: string,
   instruction: string,
   onEvent: EventCallback,
-  onStatus: StatusCallback
+  onStatus: StatusCallback,
+  userId?: string
 ): Promise<void> {
   const project = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
 
@@ -193,7 +275,8 @@ export async function runModify(
     data: { projectId, role: "user", type: "text", content: instruction },
   });
 
-  const orchestrator = new AgentOrchestrator(projectId);
+  const envOverrides = userId ? await getUserEnvOverrides(userId) : {};
+  const orchestrator = new AgentOrchestrator(projectId, envOverrides);
   activeOrchestrators.set(projectId, orchestrator);
 
   orchestrator.on("agent_event", (evt: AgentEvent) => {
@@ -254,7 +337,7 @@ export async function runModify(
  * Push the project to GitHub.
  * Automatically creates a version snapshot before pushing.
  */
-export async function pushToGitHub(projectId: string): Promise<string> {
+export async function pushToGitHub(projectId: string, userId?: string): Promise<string> {
   const project = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
 
   // Snapshot before push
@@ -264,7 +347,15 @@ export async function pushToGitHub(projectId: string): Promise<string> {
     console.warn("[version] Snapshot failed, continuing push:", e);
   }
 
-  const git = new GitManager();
+  // Use the user's GitHub token if available
+  let ghToken: string | undefined;
+  const uid = userId || project.createdById;
+  if (uid) {
+    const overrides = await getUserEnvOverrides(uid);
+    if (overrides.GITHUB_TOKEN) ghToken = overrides.GITHUB_TOKEN;
+  }
+
+  const git = new GitManager(ghToken);
 
   if (project.gitRepoUrl) {
     await git.push(getProjectDir(projectId));

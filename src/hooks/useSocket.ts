@@ -12,8 +12,9 @@ export function useSocket(projectId: string | null) {
   const [streamContent, setStreamContent] = useState("");
 
   useEffect(() => {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
     const socket = io({
-      path: "/ws",
+      path: `${basePath}/ws`,
       transports: ["websocket", "polling"],
     });
     socketRef.current = socket;

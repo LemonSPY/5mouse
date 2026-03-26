@@ -17,10 +17,12 @@ export class AgentOrchestrator extends EventEmitter {
   private projectId: string;
   private runningAgents = new Map<string, RunningAgent>();
   private fileLocks = new Map<string, string>(); // filePath → agentId
+  private envOverrides: Record<string, string>;
 
-  constructor(projectId: string) {
+  constructor(projectId: string, envOverrides?: Record<string, string>) {
     super();
     this.projectId = projectId;
+    this.envOverrides = envOverrides || {};
   }
 
   /** Spawn an agent to work on a task */
@@ -70,7 +72,7 @@ export class AgentOrchestrator extends EventEmitter {
       }
     }
 
-    const runner = new AgentRunner(agent.id, agentType, this.projectId);
+    const runner = new AgentRunner(agent.id, agentType, this.projectId, this.envOverrides);
     this.runningAgents.set(agent.id, { runner, task });
 
     // Forward agent events

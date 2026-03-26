@@ -12,6 +12,7 @@ export interface OrchestratorOptions {
   cwd: string;
   tools?: string[];
   maxTurns?: number;
+  envOverrides?: Record<string, string>;
 }
 
 /**
@@ -33,7 +34,7 @@ export class ClaudeOrchestrator extends EventEmitter {
 
       this.process = spawn("claude", args, {
         cwd: opts.cwd,
-        env: { ...process.env },
+        env: { ...process.env, ...opts.envOverrides },
         stdio: ["pipe", "pipe", "pipe"],
       });
 

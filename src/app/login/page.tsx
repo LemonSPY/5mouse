@@ -3,6 +3,8 @@
 import { signIn } from "next-auth/react";
 import { useState, useEffect } from "react";
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 interface VersionEntry {
   id: string;
   label: string;
@@ -24,12 +26,12 @@ export default function LoginPage() {
 
   const handleSignIn = async (provider: string) => {
     setLoading(provider);
-    await signIn(provider, { callbackUrl: "/" });
+    await signIn(provider, { callbackUrl: `${BASE}/` });
   };
 
   const fetchVersions = async () => {
     try {
-      const res = await fetch("/api/versions");
+      const res = await fetch(`${BASE}/api/versions`);
       const data = await res.json();
       if (data.ok) {
         setVersions(data.data.versions);
@@ -48,7 +50,7 @@ export default function LoginPage() {
     setSnapshotting(true);
     setAdminMsg(null);
     try {
-      const res = await fetch("/api/versions", {
+      const res = await fetch(`${BASE}/api/versions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label: `Manual snapshot` }),
@@ -71,7 +73,7 @@ export default function LoginPage() {
     setRestoring(id);
     setAdminMsg(null);
     try {
-      const res = await fetch(`/api/versions/${id}/restore`, { method: "POST" });
+      const res = await fetch(`${BASE}/api/versions/${id}/restore`, { method: "POST" });
       const data = await res.json();
       if (data.ok) {
         setAdminMsg("Restoring... server will restart in a moment.");
@@ -87,7 +89,7 @@ export default function LoginPage() {
   const handleDelete = async (id: string) => {
     if (!confirm(`Delete version ${id}?`)) return;
     try {
-      const res = await fetch(`/api/versions/${id}`, { method: "DELETE" });
+      const res = await fetch(`${BASE}/api/versions/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.ok) {
         fetchVersions();

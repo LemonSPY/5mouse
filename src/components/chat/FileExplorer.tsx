@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import type { FileNode } from "@/types";
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 interface FileExplorerProps {
   projectId: string;
 }
@@ -14,7 +16,7 @@ export function FileExplorer({ projectId }: FileExplorerProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/projects/${projectId}/files`)
+    fetch(`${BASE}/api/projects/${projectId}/files`)
       .then((r) => r.json())
       .then((data) => {
         if (data.ok) setTree(data.data);
@@ -25,7 +27,7 @@ export function FileExplorer({ projectId }: FileExplorerProps) {
     setLoading(true);
     setSelectedFile(filePath);
     const res = await fetch(
-      `/api/projects/${projectId}/files?path=${encodeURIComponent(filePath)}`
+      `${BASE}/api/projects/${projectId}/files?path=${encodeURIComponent(filePath)}`
     );
     const data = await res.json();
     if (data.ok) setFileContent(data.data.content);

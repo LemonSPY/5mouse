@@ -5,10 +5,11 @@ import type { ProjectStatus } from "@/generated/prisma";
  * Uses the Prisma enum ProjectStatus values.
  */
 const transitions: Record<ProjectStatus, ProjectStatus[]> = {
-  IDLE: ["PLANNING"],
+  IDLE: ["PLANNING", "ANALYZING"],
   PLANNING: ["PLAN_REVIEW", "ERROR"],
   PLAN_REVIEW: ["BUILDING", "PLANNING", "IDLE"],
   BUILDING: ["REVIEW", "ERROR"],
+  ANALYZING: ["REVIEW", "ERROR"],
   REVIEW: ["MODIFYING", "DEBUGGING", "DONE"],
   MODIFYING: ["REVIEW", "ERROR"],
   DEBUGGING: ["REVIEW", "ERROR"],

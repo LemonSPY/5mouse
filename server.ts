@@ -5,6 +5,7 @@ import {
   runPlanning,
   runBuild,
   runModify,
+  runAnalysis,
   cancelJob,
 } from "./src/lib/workflow/workflow-engine";
 import { prisma } from "./src/lib/db/client";
@@ -27,9 +28,11 @@ app.prepare().then(() => {
     handle(req, res);
   });
 
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
   const io = new SocketIOServer(server, {
     cors: { origin: "*", methods: ["GET", "POST"] },
-    path: "/ws",
+    path: `${basePath}/ws`,
   });
 
   // Forward agent events to Socket.IO rooms
@@ -77,6 +80,16 @@ app.prepare().then(() => {
               messages: mappedMessages,
               status: project?.status,
             });
+
+            // Auto-trigger analysis for imported projects that are still IDLE
+            if (project?.status === "IDLE" && project.sourceRepoUrl) {
+              runAnalysis(
+                projectId,
+                (evt) => send({ type: "stream", event: evt }),
+                (status) => send({ type: "status", status }),
+                project.createdById
+              );
+            }
             break;
           }
 
@@ -89,17 +102,29 @@ app.prepare().then(() => {
             }
 
             if (project.status === "IDLE") {
-              runPlanning(
-                projectId,
-                (evt) => send({ type: "stream", event: evt }),
-                (status) => send({ type: "status", status })
-              );
+              // Imported projects get analysis, new projects get planning
+              if (project.sourceRepoUrl) {
+                runAnalysis(
+                  projectId,
+                  (evt) => send({ type: "stream", event: evt }),
+                  (status) => send({ type: "status", status }),
+                  project.createdById
+                );
+              } else {
+                runPlanning(
+                  projectId,
+                  (evt) => send({ type: "stream", event: evt }),
+                  (status) => send({ type: "status", status }),
+                  project.createdById
+                );
+              }
             } else if (project.status === "REVIEW" || project.status === "DONE") {
               runModify(
                 projectId,
                 content,
                 (evt) => send({ type: "stream", event: evt }),
-                (status) => send({ type: "status", status })
+                (status) => send({ type: "status", status }),
+                project.createdById
               );
             }
             break;
@@ -114,7 +139,8 @@ app.prepare().then(() => {
             runBuild(
               projectId,
               (evt) => send({ type: "stream", event: evt }),
-              (status) => send({ type: "status", status })
+              (status) => send({ type: "status", status }),
+              project.createdById
             );
             break;
           }

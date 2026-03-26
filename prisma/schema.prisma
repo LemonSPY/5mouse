@@ -26,6 +26,7 @@ model User {
   createdProjects Project[]  @relation("CreatedBy")
   createdTemplates Template[] @relation("TemplateCreator")
   messages       Message[]
+  settings       UserSettings?
 
   @@map("users")
 }
@@ -33,6 +34,19 @@ model User {
 enum UserRole {
   ADMIN
   MEMBER
+}
+
+model UserSettings {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  anthropicApiKey  String?  @db.Text
+  githubToken      String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
 }
 
 model Account {
@@ -123,6 +137,7 @@ model Project {
   templateId  String?
   gitRepoUrl  String?
   gitBranch   String?       @default("main")
+  sourceRepoUrl String?
   createdById String
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -147,6 +162,7 @@ enum ProjectStatus {
   PLANNING
   PLAN_REVIEW
   BUILDING
+  ANALYZING
   REVIEW
   MODIFYING
   DEBUGGING
@@ -202,6 +218,7 @@ enum AgentType {
   DEBUGGER
   REVIEWER
   DEVOPS
+  ANALYZER
 }
 
 enum AgentStatus {
