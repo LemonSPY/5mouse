@@ -17,20 +17,23 @@ export function FileExplorer({ projectId }: FileExplorerProps) {
 
   useEffect(() => {
     fetch(`${BASE}/api/projects/${projectId}/files`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data.ok) setTree(data.data);
-      });
+        if (data?.ok) setTree(data.data);
+      })
+      .catch(() => {});
   }, [projectId]);
 
   const loadFile = async (filePath: string) => {
     setLoading(true);
     setSelectedFile(filePath);
-    const res = await fetch(
-      `${BASE}/api/projects/${projectId}/files?path=${encodeURIComponent(filePath)}`
-    );
-    const data = await res.json();
-    if (data.ok) setFileContent(data.data.content);
+    try {
+      const res = await fetch(
+        `${BASE}/api/projects/${projectId}/files?path=${encodeURIComponent(filePath)}`
+      );
+      const data = res.ok ? await res.json() : null;
+      if (data?.ok) setFileContent(data.data.content);
+    } catch { /* ignore */ }
     setLoading(false);
   };
 

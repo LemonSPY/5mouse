@@ -134,10 +134,6 @@ export async function runPlanning(
   };
 
   try {
-    await prisma.message.create({
-      data: { projectId, role: "user", type: "text", content: project.idea },
-    });
-
     const result = await orchestrator.spawnAgent(
       "PLANNER",
       task,

@@ -22,10 +22,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetch(`${BASE}/api/settings`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data.ok) setSettings(data.data);
-      });
+        if (data?.ok) setSettings(data.data);
+      })
+      .catch(() => {});
   }, []);
 
   const handleSave = async () => {
@@ -41,16 +42,20 @@ export default function SettingsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+
+    let data: { ok: boolean; error?: string };
+    try { data = await res.json(); } catch { data = { ok: false, error: "Server error" }; }
 
     if (data.ok) {
       setMessage({ text: "Settings saved", ok: true });
       setAnthropicKey("");
       setGithubToken("");
       // Refresh hints
-      const refresh = await fetch(`${BASE}/api/settings`);
-      const refreshData = await refresh.json();
-      if (refreshData.ok) setSettings(refreshData.data);
+      try {
+        const refresh = await fetch(`${BASE}/api/settings`);
+        const refreshData = refresh.ok ? await refresh.json() : null;
+        if (refreshData?.ok) setSettings(refreshData.data);
+      } catch { /* ignore */ }
     } else {
       setMessage({ text: data.error || "Failed to save", ok: false });
     }
@@ -59,18 +64,20 @@ export default function SettingsPage() {
 
   const handleClear = async (field: "anthropicApiKey" | "githubToken") => {
     setSaving(true);
-    const res = await fetch(`${BASE}/api/settings`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [field]: null }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const refresh = await fetch(`${BASE}/api/settings`);
-      const refreshData = await refresh.json();
-      if (refreshData.ok) setSettings(refreshData.data);
-      setMessage({ text: "Key removed", ok: true });
-    }
+    try {
+      const res = await fetch(`${BASE}/api/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: null }),
+      });
+      const data = res.ok ? await res.json() : { ok: false };
+      if (data.ok) {
+        const refresh = await fetch(`${BASE}/api/settings`);
+        const refreshData = refresh.ok ? await refresh.json() : null;
+        if (refreshData?.ok) setSettings(refreshData.data);
+        setMessage({ text: "Key removed", ok: true });
+      }
+    } catch { /* ignore */ }
     setSaving(false);
   };
 

@@ -37,25 +37,38 @@ export default function Home() {
   }, [messages, streamContent]);
 
   const fetchProjects = async () => {
-    const res = await fetch(`${BASE}/api/projects`);
-    const data = await res.json();
-    if (data.ok) setProjects(data.data);
+    try {
+      const res = await fetch(`${BASE}/api/projects`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.ok) setProjects(data.data);
+    } catch {
+      // ignore — will retry on next action
+    }
   };
 
   const handleNewProject = async () => {
     const idea = prompt("Describe your software idea:");
     if (!idea) return;
 
-    const res = await fetch(`${BASE}/api/projects`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idea }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      setProjects((prev) => [data.data, ...prev]);
-      setSelectedId(data.data.id);
-      setTimeout(() => sendMessage(idea), 500);
+    try {
+      const res = await fetch(`${BASE}/api/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idea }),
+      });
+      if (!res.ok) {
+        alert("Failed to create project");
+        return;
+      }
+      const data = await res.json();
+      if (data.ok) {
+        setProjects((prev) => [data.data, ...prev]);
+        setSelectedId(data.data.id);
+        setTimeout(() => sendMessage(idea), 500);
+      }
+    } catch {
+      alert("Network error creating project");
     }
   };
 
@@ -63,17 +76,21 @@ export default function Home() {
     const repoUrl = prompt("GitHub repository URL (e.g. https://github.com/owner/repo):");
     if (!repoUrl) return;
 
-    const res = await fetch(`${BASE}/api/projects/import`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ repoUrl }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      setProjects((prev) => [data.data, ...prev]);
-      setSelectedId(data.data.id);
-    } else {
-      alert(data.error || "Import failed");
+    try {
+      const res = await fetch(`${BASE}/api/projects/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repoUrl }),
+      });
+      const data = res.ok ? await res.json() : { ok: false, error: `Server error (${res.status})` };
+      if (data.ok) {
+        setProjects((prev) => [data.data, ...prev]);
+        setSelectedId(data.data.id);
+      } else {
+        alert(data.error || "Import failed");
+      }
+    } catch {
+      alert("Network error importing project");
     }
   };
 
@@ -147,15 +164,21 @@ export default function Home() {
                 {(status === "REVIEW" || status === "DONE") && (
                   <button
                     onClick={async () => {
-                      const res = await fetch(
-                        `${BASE}/api/projects/${selectedId}/push`,
-                        { method: "POST" }
-                      );
-                      const data = await res.json();
-                      if (data.ok) {
-                        window.open(data.data.url, "_blank");
-                      } else {
-                        alert(data.error || "Push failed");
+                      try {
+                        const res = await fetch(
+                          `${BASE}/api/projects/${selectedId}/push`,
+                          { method: "POST" }
+                        );
+                        const data = res.ok
+                          ? await res.json()
+                          : { ok: false, error: `Server error (${res.status})` };
+                        if (data.ok) {
+                          window.open(data.data.url, "_blank");
+                        } else {
+                          alert(data.error || "Push failed");
+                        }
+                      } catch {
+                        alert("Network error pushing to GitHub");
                       }
                     }}
                     className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 transition-colors"

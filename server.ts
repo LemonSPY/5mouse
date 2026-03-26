@@ -104,6 +104,11 @@ app.prepare().then(() => {
               break;
             }
 
+            // Save user message to DB
+            await prisma.message.create({
+              data: { projectId, role: "user", type: "text", content },
+            });
+
             if (project.status === "IDLE") {
               // Imported projects get analysis, new projects get planning
               if (project.sourceRepoUrl) {

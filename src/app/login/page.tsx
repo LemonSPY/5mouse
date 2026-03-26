@@ -40,7 +40,13 @@ function LoginContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-      const data = await res.json();
+
+      let data: { ok: boolean; error?: string };
+      try {
+        data = await res.json();
+      } catch {
+        data = { ok: false, error: `Server error (${res.status})` };
+      }
 
       if (data.ok) {
         const callbackUrl = searchParams.get("callbackUrl") || "/";

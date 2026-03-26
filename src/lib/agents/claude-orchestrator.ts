@@ -26,10 +26,14 @@ export class ClaudeOrchestrator extends EventEmitter {
   /** Run a prompt through Claude CLI and stream events back. */
   async run(prompt: string, opts: OrchestratorOptions): Promise<void> {
     return new Promise((resolve, reject) => {
-      const args = ["-p", "--output-format", "stream-json"];
+      const args = ["--print", "--output-format", "stream-json"];
 
       if (opts.tools?.length) {
         args.push("--allowedTools", opts.tools.join(","));
+      }
+
+      if (opts.maxTurns) {
+        args.push("--max-turns", String(opts.maxTurns));
       }
 
       this.process = spawn("claude", args, {
@@ -66,10 +70,14 @@ export class ClaudeOrchestrator extends EventEmitter {
       });
 
       this.process.on("error", (err) => {
-        const evt: ClaudeStreamEvent = { type: "error", content: err.message };
+        const message =
+          (err as NodeJS.ErrnoException).code === "ENOENT"
+            ? "Claude CLI not found. Install it with: npm install -g @anthropic-ai/claude-code"
+            : err.message;
+        const evt: ClaudeStreamEvent = { type: "error", content: message };
         this.emit("event", evt);
         this.process = null;
-        reject(err);
+        reject(new Error(message));
       });
     });
   }

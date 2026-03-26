@@ -26,8 +26,8 @@ ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 # Install git (needed for simple-git operations)
 RUN apk add --no-cache git
 
-# Install Claude CLI globally (requires npm)
-RUN npm install -g @anthropic-ai/claude-code || true
+# Install Claude Code CLI globally
+RUN npm install -g @anthropic-ai/claude-code@latest 2>/dev/null || echo "WARN: claude-code install failed, agent features require ANTHROPIC_API_KEY"
 
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
